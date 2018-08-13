@@ -7,7 +7,9 @@ interface Persona
     id : number,
     nombre: string,
     apellido: string,
-    edad: number
+    edad: number,
+    pass: string,
+    user: string
 }
 
 interface Automovil
@@ -17,7 +19,8 @@ interface Automovil
     linea : string,
     color : string,
     modelo : number,
-    puertas : number
+    puertas : number,
+    idPersonaPropietaria: number
 }
 
 export class App {
@@ -29,18 +32,18 @@ export class App {
 
     private _personas : Array<Persona> =
     [
-        { id: 1, nombre: "Juan", apellido: "Rodriguez", edad: 20 },
-        { id: 2, nombre: "Mario", apellido: "Martinez", edad: 18 },
-        { id: 3, nombre: "Rodrigo", apellido: "Alvarado", edad: 22 }
+        { id: 1, nombre: "Juan", apellido: "Rodriguez", edad: 20 , pass: 'angular' , user: 'jrodriguez' },
+        { id: 2, nombre: "Mario", apellido: "Martinez", edad: 18 , pass: 'angular' , user: 'mmartinez' },
+        { id: 3, nombre: "Rodrigo", apellido: "Alvarado", edad: 22 , pass: 'angular' , user: 'ralvarado' }
     ];
 
     private _automoviles : Array<Automovil> =
     [
-        { id: 1, marca: 'Toyota', linea: 'Corolla', modelo: 2015, color: 'Blanco', puertas: 4  },
-        { id: 2, marca: 'Mazda', linea: 'CX-9', modelo: 2017, color: 'Cafe', puertas: 5  },
-        { id: 3, marca: 'Honda', linea: 'Civic', modelo: 2014, color: 'Negro', puertas: 4  },
-        { id: 4, marca: 'Kia', linea: 'Sorento', modelo: 2012, color: 'Rojo', puertas: 5  },
-        { id: 5, marca: 'Mitsubishi', linea: 'Lancer', modelo: 2015, color: 'Azul', puertas: 4  }
+        { id: 1, marca: 'Toyota', linea: 'Corolla', modelo: 2015, color: 'Blanco', puertas: 4 , idPersonaPropietaria: 1   },
+        { id: 2, marca: 'Mazda', linea: 'CX-9', modelo: 2017, color: 'Cafe', puertas: 5 , idPersonaPropietaria: 1  },
+        { id: 3, marca: 'Honda', linea: 'Civic', modelo: 2014, color: 'Negro', puertas: 4 , idPersonaPropietaria: 2  },
+        { id: 4, marca: 'Kia', linea: 'Sorento', modelo: 2012, color: 'Rojo', puertas: 5 , idPersonaPropietaria: 3  },
+        { id: 5, marca: 'Mitsubishi', linea: 'Lancer', modelo: 2015, color: 'Azul', puertas: 4 , idPersonaPropietaria: 3 }
     ]
 
     //#endregion
@@ -81,6 +84,15 @@ export class App {
 
     private createMethods (app : App) 
     {    
+        app.instanceApp.post('/authenticate', ( req, res) => {
+            let credentials : { user: string, pass: string } = req.body;
+
+            if (app.personas.filter(p => p.user == credentials.user && p.pass == credentials.pass).length > 0)
+                res.json({ message: 'Login success', success: true});
+            else
+                res.json({ message: 'Login denied', success: false});
+        });
+
         //CRUD PERSONAS
         app.instanceApp.get('/api/persona', function (req, res) {
             res.json(app.personas);
