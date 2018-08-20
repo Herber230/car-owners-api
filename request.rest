@@ -1,0 +1,8 @@
+
+POST http://localhost:3000/authenticate HTTP/1.1
+content-type: application/json
+
+{
+    "user": "ralvarado",
+    "pass": "angular"
+}

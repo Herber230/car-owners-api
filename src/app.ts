@@ -1,6 +1,14 @@
 //Core framework
 import express = require('express');
 import bodyParser = require('body-parser');
+import jwt = require('jsonwebtoken');
+import cors = require('cors');
+
+const SECRET_KEY = "secretKey";
+// const EXPIRATION_TOKEN = 60; //1 MINUTE
+// const EXPIRATION_REFRESH_TOKEN = 1800; // 30 MINUTES
+const EXPIRATION_TOKEN = 5; //1 MINUTE
+const EXPIRATION_REFRESH_TOKEN = 10; // 30 MINUTES
 
 interface Persona 
 {
@@ -74,25 +82,25 @@ export class App {
             
             });
 
-        this._expressApp.all('/*', function(req, res, next) {
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-            res.header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type");
-            next();
-        });
+        //Enable CORS Requests
+        let options:cors.CorsOptions = 
+        {
+            allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+            credentials: true,
+            methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
+            //origin: API_URL,
+            preflightContinue: false
+        };   
+
+        this._expressApp.use(cors(options));
+   
+
+
+        this.protectRoutes(this);
     }
 
     private createMethods (app : App) 
     {    
-        app.instanceApp.post('/authenticate', ( req, res) => {
-            let credentials : { user: string, pass: string } = req.body;
-
-            if (app.personas.filter(p => p.user == credentials.user && p.pass == credentials.pass).length > 0)
-                res.json({ message: 'Login success', success: true});
-            else
-                res.json({ message: 'Login denied', success: false});
-        });
-
         //CRUD PERSONAS
         app.instanceApp.get('/api/persona', function (req, res) {
             res.json(app.personas);
@@ -221,6 +229,98 @@ export class App {
             app.automoviles.splice(index, 1);
             
             res.json( { "status": "ok" });
+        });
+
+        //Authentication Routes
+        
+        app.instanceApp.post('/authenticate', (request, response) => 
+        {
+            let credentials : { user: string, pass: string } = request.body;
+            let pFilter = app.personas.filter(p => p.user == credentials.user && p.pass == credentials.pass);
+            
+            if (pFilter.length > 0)
+            {
+                let p = pFilter[0];
+                let tokens = this.createTokens( { nombre: p.nombre, apellido: p.apellido } );
+
+                response.json({ message: 'Login success', success: true, token: tokens.token, refreshToken: tokens.refreshToken });
+            }                
+            else
+            {
+                response.json({ message: 'Login denied', success: false});
+            }
+        });
+
+        app.instanceApp.post('/refresh-token', (request, response) => 
+        {
+            let requestPayLoad = <{ refreshToken: string }>request.body;
+
+            jwt.verify( requestPayLoad.refreshToken , SECRET_KEY, ( err, decoded) => {
+                
+                if (!err)
+                {
+                    let tokens = this.createTokens( { nombre: 'Token', apellido: 'Refreshed' } );
+                    response.json({ message: 'Tokens refreshed', success: true, token: tokens.token, refreshToken: tokens.refreshToken });
+                }
+                else
+                    response.json({ message: 'Cannot refresh tokens', success: false});
+            });
+
+        });
+    }
+
+    private createTokens( data : any ) : { token : string, refreshToken : string }
+    {
+        let token = jwt.sign( 
+            data,
+            SECRET_KEY,
+            { expiresIn: EXPIRATION_TOKEN }
+        );
+
+        let refreshToken = jwt.sign( 
+            data,
+            SECRET_KEY,
+            { expiresIn: EXPIRATION_REFRESH_TOKEN }
+        );
+
+        return { token, refreshToken };
+    }
+
+    private protectRoutes(app : App) : void
+    {
+        app.instanceApp.use('/api', (request, response, next) => {
+
+            let deniedAccess = (message?) => response.status(401).send( message ? { message: message } : null );
+                
+            var header = request.get('Authorization');
+            if (!header)
+            {
+                deniedAccess();
+                return;
+            }
+                
+                
+            var schema = header.split(' ')[0];    
+            if (!schema || schema != 'Bearer')
+            {
+                deniedAccess('The Authorization schema must be Bearer');
+                return;
+            }
+
+            var token = header.split(' ')[1]
+            if (!token)
+            {
+                deniedAccess('Incomplete/bad token');
+                return;
+            }
+
+            jwt.verify( token , SECRET_KEY, ( err, decoded) => {
+                if (!err)
+                    next();
+                else
+                    deniedAccess( err.message );
+            });
+            
         });
     }
 
