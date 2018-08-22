@@ -5,10 +5,8 @@ import jwt = require('jsonwebtoken');
 import cors = require('cors');
 
 const SECRET_KEY = "secretKey";
-// const EXPIRATION_TOKEN = 60; //1 MINUTE
-// const EXPIRATION_REFRESH_TOKEN = 1800; // 30 MINUTES
-const EXPIRATION_TOKEN = 5; //1 MINUTE
-const EXPIRATION_REFRESH_TOKEN = 10; // 30 MINUTES
+const EXPIRATION_TOKEN = 60; //1 MINUTE
+const EXPIRATION_REFRESH_TOKEN = 1800; // 30 MINUTES
 
 interface Persona 
 {
@@ -96,7 +94,18 @@ export class App {
    
 
 
-        this.protectRoutes(this);
+        //this.protectRoutes(this);
+    }
+
+    public addWrapper( data : any, message: string) : any
+    {
+        let objectWrappered = {
+            succes: true,
+            message: message,
+            data: data
+        }
+
+        return objectWrappered;
     }
 
     private createMethods (app : App) 
@@ -230,6 +239,138 @@ export class App {
             
             res.json( { "status": "ok" });
         });
+
+        //CRUD PERSONAS WRAPPER
+        app.instanceApp.get('/api/v2/persona', function (req, res) {
+            res.json(app.addWrapper(app.personas, 'Coleccion de personas'));
+        });
+        
+        app.instanceApp.get('/api/v2/persona/:id', function (req, res) {
+        
+            var idPersona = req.params.id;
+        
+            var index = 0;
+            for (var i = 0; i < app.personas.length; i ++)
+                if (app.personas[i].id == idPersona)
+                    index = i;
+            
+            res.json(app.addWrapper(app.personas[index], 'Una persona'));
+        });
+        
+        app.instanceApp.post('/api/v2/persona', function (req, res) {
+        
+            var nuevaPersona = req.body;
+        
+            app.personas.sort((a, b) => {
+                if (a.id < b.id)
+                    return -1;
+                if (a.id > b.id)
+                    return 1;
+                return 0;
+            })
+        
+            var nuevoId = app.personas[app.personas.length-1].id + 1;
+            nuevaPersona.id = nuevoId;
+            app.personas.push(nuevaPersona);    
+        
+            res.json(app.addWrapper(nuevaPersona, 'Se almaceno una persona'));
+        });
+        
+        app.instanceApp.put('/api/v2/persona', function (req, res) {
+        
+            var persona = req.body;
+        
+            var index = 0;
+        
+            for (var i = 0; i < app.personas.length; i ++)
+                if (app.personas[i].id == persona.id)
+                    index = i;
+            
+            app.personas[index] = persona;
+        
+            res.json(app.addWrapper(persona,'Se actualizo una persona'));
+        });
+        
+        app.instanceApp.delete('/api/v2/persona/:id', function (req, res) {
+        
+            var idPersona = req.params.id;
+        
+            var index = 0;
+            for (var i = 0; i < app.personas.length; i ++)
+                if (app.personas[i].id == idPersona)
+                    index = i;
+        
+                    app.personas.splice(index, 1);
+            
+            res.json( app.addWrapper({ }, 'Se elimino una persona'));
+        });
+
+        //CRUD ATUMOVILES
+        app.instanceApp.get('/api/v2/automovil', function (req, res) {
+            res.json(app.addWrapper(app.automoviles,'Coleccion de Automoviles'));
+        });
+        
+        app.instanceApp.get('/api/v2/automovil/:id', function (req, res) {
+        
+            var idAutomovil = req.params.id;
+        
+            var index = 0;
+            for (var i = 0; i < app.automoviles.length; i ++)
+                if (app.automoviles[i].id == idAutomovil)
+                    index = i;
+            
+            res.json(app.addWrapper(app.automoviles[index],'Un automovil'));
+        });
+        
+        app.instanceApp.post('/api/v2/automovil', function (req, res) {
+        
+            var nuevoAutomovil = req.body;
+        
+            app.automoviles.sort((a, b) => {
+                if (a.id < b.id)
+                    return -1;
+                if (a.id > b.id)
+                    return 1;
+                return 0;
+            })
+        
+            var nuevoId = app.automoviles[app.automoviles.length-1].id + 1;
+            nuevoAutomovil.id = nuevoId;
+            app.automoviles.push(nuevoAutomovil);    
+        
+            res.json(app.addWrapper(nuevoAutomovil,'Automovil creado'));
+        });
+        
+        app.instanceApp.put('/api/v2/automovil', function (req, res) {
+        
+            var automovil = req.body;
+        
+            var index = 0;
+        
+            for (var i = 0; i < app.automoviles.length; i ++)
+                if (app.automoviles[i].id == automovil.id)
+                    index = i;
+            
+            app.automoviles[index] = automovil;
+        
+            res.json(app.addWrapper(automovil,'Automovil actualizado'));
+        });
+        
+        app.instanceApp.delete('/api/v2/automovil/:id', function (req, res) {
+        
+            var idAutomovil = req.params.id;
+        
+            var index = 0;
+            for (var i = 0; i < app.automoviles.length; i ++)
+                if (app.automoviles[i].id == idAutomovil)
+                    index = i;
+        
+            app.automoviles.splice(index, 1);
+            
+            res.json( app.addWrapper({ }, 'Automovil eliminado'));
+        });
+
+    
 
         //Authentication Routes
         
