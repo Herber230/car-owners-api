@@ -1,12 +1,11 @@
 {
-  "name": "typescript-api",
+  "name": "car-owners-api",
   "version": "1.0.0",
-  "description": "Example of a typescript api",
+  "description": "Example of a node api using typescript",
   "main": "index.js",
   "scripts": {
-    "compile": "tsc",
-    "deploy": "npm run compile && node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "transpile": "tsc",
+    "start": "npm run transpile && node dist/server.js"
   },
   "keywords": [
     "typescript",

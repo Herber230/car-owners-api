@@ -4,9 +4,12 @@ import bodyParser = require('body-parser');
 import jwt = require('jsonwebtoken');
 import cors = require('cors');
 
+// CONFIGURATIONS ====================================================================================================================================
+const PROTECT_ROUTES = false;
 const SECRET_KEY = "secretKey";
 const EXPIRATION_TOKEN = 60; //1 MINUTE
 const EXPIRATION_REFRESH_TOKEN = 1800; // 30 MINUTES
+// ===================================================================================================================================================
 
 interface Persona 
 {
@@ -93,8 +96,8 @@ export class App {
         this._expressApp.use(cors(options));
    
 
-
-        //this.protectRoutes(this);
+        if (PROTECT_ROUTES)
+            this.protectRoutes(this);
     }
 
     public addWrapper( data : any, message: string) : any
